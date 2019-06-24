@@ -17,8 +17,8 @@ class User1 extends Component {
   }
 
   getUser() {
-    this.setState({ isLoading: true });
-
+    this.setState({ isLoading: true, error: null });
+  
     axios.get(`https://jsonplaceholder.typicode.com/users/${this.state.userId}`)
       .then(result => {
         if (this.state.unmounted) {
@@ -60,7 +60,8 @@ class User1 extends Component {
       {this.state.error ? <p>Cannot load user</p> : <></>}
       {!this.state.isLoading && !this.state.error ? <p>{this.state.userName}</p> : <></>}
       <button onClick={() => {
-        this.setState({ userId: this.state.userId + 1 });
+        const newUserId = this.state.userId + 1;
+        this.setState({ userId: newUserId }, this.getUser);
         this.getUser();
       }} >Next</button>
     </>);
@@ -70,11 +71,23 @@ class User1 extends Component {
 function User2(props) {
   const [userId, setUserId] = useState(props.userId);
   const [name, setName] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isError, setIsError] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     const fetchData = async () => {
-      const response = await axios.get(`https://jsonplaceholder.typicode.com/users/${userId}`);
+      setIsLoading(true);
+      setIsError(false);
+      let response;
+      try { 
+        response = await axios.get(`https://jsonplaceholder.typicode.com/users/${userId}`);
+      } catch (e) {
+        setIsError(true);
+        setIsLoading(false);
+        return;
+      }
+      setIsLoading(false);
       if (cancelled) return;
       setName(response.data.name);
     };
@@ -85,7 +98,9 @@ function User2(props) {
   }, [userId]);
 
   return (<>
-    <p>{name}</p>
+    {isLoading ? <p>Loading ...</p> : <></>}
+    {isError ? <p>Cannot load user</p> : <></>}
+    {!isLoading && !isError && name ? <p>{name}</p> : <></>}
     <button onClick={() => setUserId(userId + 1)} >Next</button>
   </>);
 }
@@ -109,7 +124,7 @@ function User3(props) {
 
 function App() {
   return (
-    <User3 userId={1} />
+    <User1 userId={1} />
   );
 }
 
